@@ -218,39 +218,32 @@ impl RiscvCpu {
 
     pub fn exec(&mut self, mem : &mut dyn MemIf) -> bool {
         let inst = self.fetch_inst(mem);
-        print!("{:#04x}: {:#010x} ({:?}-type): ", self.pc, inst.raw, inst.format());
-        
         let imm = inst.imm();
         let rs1_val = self.rs1(&inst);
         let rs2_val = self.rs2(&inst);
 
         match inst.spec() {
             (RiscvOpcode::LUI, _, _) => {
-                println!("lui");
                 self.writeback(&inst, imm.unwrap());
                 self.pc += 4;
                 true
             },
             (RiscvOpcode::AUIPC, _, _) => {
-                println!("auipc");
                 self.writeback(&inst, self.pc + imm.unwrap());
                 self.pc += 4;
                 true
             },
             (RiscvOpcode::JAL, _, _) => {
-                println!("jal (dest = {:x})", rv64alu::add(self.pc, imm.unwrap()));
                 self.writeback(&inst, self.pc + 4);
                 self.pc = rv64alu::add(self.pc, imm.unwrap());
                 true
             },
             (RiscvOpcode::JALR, 0, _) => {
-                println!("jalr (dest = {:x})", rv64alu::add(rs1_val.unwrap(), imm.unwrap()));
                 self.writeback(&inst, self.pc + 4);
                 self.pc = rv64alu::add(rs1_val.unwrap(), imm.unwrap());
                 true
             },
             (RiscvOpcode::BRANCH, funct3, _) => {
-                println!("Branch (funct3 = {})", funct3);
                 let pred = match funct3 {
                     0 => rs1_val.unwrap() == rs2_val.unwrap(),
                     1 => rs1_val.unwrap() != rs2_val.unwrap(),
@@ -271,7 +264,6 @@ impl RiscvCpu {
                 true
             },
             (RiscvOpcode::LOAD, funct3, _) => {
-                println!("Load (funct3 = {})", funct3);
                 let addr = rs1_val.unwrap().overflowing_add(imm.unwrap()).0;
                 let ld_val = match funct3 {
                     0 => bitops::sign_ext8to64(read8(mem, addr)),
@@ -289,7 +281,6 @@ impl RiscvCpu {
                 true
             },
             (RiscvOpcode::STORE, funct3, _) => {
-                println!("Store (funct3 = {})", funct3);
                 let addr = rs1_val.unwrap().overflowing_add(imm.unwrap()).0;
                 match funct3 {
                     0 => write8(mem, addr, rs2_val.unwrap()),
@@ -307,7 +298,6 @@ impl RiscvCpu {
                 (opcode == RiscvOpcode::OPIMM) ||
                 (opcode == RiscvOpcode::OP32) ||
                 (opcode == RiscvOpcode::OPIMM32) => {
-                println!("OP");
                     
                 let op1 = rs1_val.unwrap();
                 let op2 = match opcode {
@@ -333,7 +323,6 @@ impl RiscvCpu {
                 true
             },
             (RiscvOpcode::SYSTEM, 0, 8) => {
-                println!("wfi");
                 false
             }
             x => panic!("Unsupported instruction: {:?}", x)
