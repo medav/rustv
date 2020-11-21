@@ -1,6 +1,5 @@
 
-#[path = "bitops.rs"]
-mod bitops;
+use crate::bitops;
 
 pub trait MemIf {
     fn read(&self, addr : u64) -> u8;
