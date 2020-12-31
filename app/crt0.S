@@ -5,4 +5,4 @@ _init:
     li    sp, 0x00002000
     jal main
 loop:
-    wfi
+    ebreak

@@ -39,31 +39,31 @@ pub fn read64(mem : &dyn MemIf, addr : u64) -> u64 {
 
 #[inline(always)]
 pub fn write8(mem : &mut dyn MemIf, addr : u64, val : u64) {
-    mem.write(addr + 0, bitops::bit_range_get(val, bitops::BitRange(0, 7)) as u8);
+    mem.write(addr + 0, bit_range_get!(val, (0, 7)) as u8);
 }
 
 #[inline(always)]
 pub fn write16(mem : &mut dyn MemIf, addr : u64, val : u64) {
-    mem.write(addr + 0, bitops::bit_range_get(val, bitops::BitRange(0, 7)) as u8);
-    mem.write(addr + 1, bitops::bit_range_get(val, bitops::BitRange(8, 15)) as u8);
+    mem.write(addr + 0, bit_range_get!(val, (0, 7)) as u8);
+    mem.write(addr + 1, bit_range_get!(val, (8, 15)) as u8);
 }
 
 #[inline(always)]
 pub fn write32(mem : &mut dyn MemIf, addr : u64, val : u64) {
-    mem.write(addr + 0, bitops::bit_range_get(val, bitops::BitRange(0, 7)) as u8);
-    mem.write(addr + 1, bitops::bit_range_get(val, bitops::BitRange(8, 15)) as u8);
-    mem.write(addr + 2, bitops::bit_range_get(val, bitops::BitRange(16, 23)) as u8);
-    mem.write(addr + 3, bitops::bit_range_get(val, bitops::BitRange(24, 31)) as u8);
+    mem.write(addr + 0, bit_range_get!(val, (0, 7)) as u8);
+    mem.write(addr + 1, bit_range_get!(val, (8, 15)) as u8);
+    mem.write(addr + 2, bit_range_get!(val, (16, 23)) as u8);
+    mem.write(addr + 3, bit_range_get!(val, (24, 31)) as u8);
 }
 
 #[inline(always)]
 pub fn write64(mem : &mut dyn MemIf, addr : u64, val : u64) {
-    mem.write(addr + 0, bitops::bit_range_get(val, bitops::BitRange(0, 7)) as u8);
-    mem.write(addr + 1, bitops::bit_range_get(val, bitops::BitRange(8, 15)) as u8);
-    mem.write(addr + 2, bitops::bit_range_get(val, bitops::BitRange(16, 23)) as u8);
-    mem.write(addr + 3, bitops::bit_range_get(val, bitops::BitRange(24, 31)) as u8);
-    mem.write(addr + 4, bitops::bit_range_get(val, bitops::BitRange(32, 39)) as u8);
-    mem.write(addr + 5, bitops::bit_range_get(val, bitops::BitRange(40, 47)) as u8);
-    mem.write(addr + 6, bitops::bit_range_get(val, bitops::BitRange(48, 55)) as u8);
-    mem.write(addr + 7, bitops::bit_range_get(val, bitops::BitRange(56, 63)) as u8);
+    mem.write(addr + 0, bit_range_get!(val, (0, 7)) as u8);
+    mem.write(addr + 1, bit_range_get!(val, (8, 15)) as u8);
+    mem.write(addr + 2, bit_range_get!(val, (16, 23)) as u8);
+    mem.write(addr + 3, bit_range_get!(val, (24, 31)) as u8);
+    mem.write(addr + 4, bit_range_get!(val, (32, 39)) as u8);
+    mem.write(addr + 5, bit_range_get!(val, (40, 47)) as u8);
+    mem.write(addr + 6, bit_range_get!(val, (48, 55)) as u8);
+    mem.write(addr + 7, bit_range_get!(val, (56, 63)) as u8);
 }

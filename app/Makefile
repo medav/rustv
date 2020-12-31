@@ -12,7 +12,7 @@ $(APP).bin: $(APP).elf
 	$(OBJCOPY) -O binary $< $@
 
 $(APP).elf: $(APP).c link.ld
-	$(CC) -Tlink.ld crt0.S $< -mabi=lp64 -march=rv64i -nostdlib -static -Wl,--no-gc-sections -o $@
+	$(CC) -Tlink.ld crt0.S $< -mabi=lp64 -march=rv64ic -nostdlib -static -Wl,--no-gc-sections -o $@
 
 .PHONY: clean
 clean:

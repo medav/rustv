@@ -1,4 +1,5 @@
 
+use crate::bitops::*;
 
 #[inline(always)]
 pub fn add(op1 : u64, op2 : u64) -> u64 {
@@ -91,4 +92,25 @@ pub fn or(op1 : u64, op2 : u64) -> u64 {
 #[inline(always)]
 pub fn not(op1 : u64) -> u64 {
     !op1
+}
+
+#[inline(always)]
+pub fn sll(v : u64, shamt : u64) -> u64 {
+    v << shamt
+}
+
+#[inline(always)]
+pub fn srl(v : u64, shamt : u64) -> u64 {
+    v >> shamt
+}
+
+#[inline(always)]
+pub fn sra(v : u64, shamt : u64) -> u64 {
+    if shamt == 0 {
+        v >> shamt
+    }
+    else {
+        let w = 64 - shamt;
+        sign_ext64!(w, v >> shamt)
+    }
 }
