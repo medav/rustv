@@ -52,13 +52,18 @@ fn main() {
     
     loop {
         let raw_inst = fetch_inst(&arch, &mut arr);
+        // println!("{:04x}: {:?}", arch.pc, raw_inst);
         let decoded = decode(&raw_inst);
+        // println!("{:?}", arch.regs);
         println!("{:04x}: ({:08x}) {:?}", arch.pc, raw_inst.raw, decoded);
-        exec_inst(&mut arch, &mut arr, &decoded);
+       
+
+        let res = exec_inst(&mut arch, &mut arr, &decoded);
+
+        if res == ExecResult::Halt {
+            break;
+        }
     }
-
-    // exec_inst(&cpu, &mut arr, &decoded);
-
 }
 
 

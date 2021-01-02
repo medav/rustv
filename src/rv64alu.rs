@@ -90,6 +90,11 @@ pub fn or(op1 : u64, op2 : u64) -> u64 {
 }
 
 #[inline(always)]
+pub fn xor(op1 : u64, op2 : u64) -> u64 {
+    op1 ^ op2
+}
+
+#[inline(always)]
 pub fn not(op1 : u64) -> u64 {
     !op1
 }
@@ -113,4 +118,19 @@ pub fn sra(v : u64, shamt : u64) -> u64 {
         let w = 64 - shamt;
         sign_ext64!(w, v >> shamt)
     }
+}
+
+#[inline(always)]
+pub fn sllw(v : u64, shamt : u64) -> u64 {
+    sign_ext64!(32, sll(v, shamt) & 0xFFFFFFFF)
+}
+
+#[inline(always)]
+pub fn srlw(v : u64, shamt : u64) -> u64 {
+    sign_ext64!(32, srl(v, shamt) & 0xFFFFFFFF)
+}
+
+#[inline(always)]
+pub fn sraw(v : u64, shamt : u64) -> u64 {
+    sign_ext64!(32, sraw(v, shamt) & 0xFFFFFFFF)
 }

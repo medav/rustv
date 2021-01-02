@@ -90,6 +90,7 @@ pub enum InstOpcode {
     CUSTOM3 = 0b1111011
 }
 
+#[derive(Debug)]
 pub struct InstSpec(pub InstOpcode, pub usize);
 
 #[derive(Debug, PartialEq)]
@@ -150,6 +151,9 @@ pub enum DecodedInst {
     //
     // System { func : SystemFunct, rs1 : usize, rs2 : usize, imm : u64 },
 
+    ECall,
+    EBreak,
+
     //
     // Compressed Quandrant 0 Instructions
     //
@@ -195,8 +199,8 @@ pub enum DecodedInst {
     // CLqsp   { rd : usize, imm : u64 },
     CFlwsp  { rd : usize, imm : u64 },
     CLdsp   { rd : usize, imm : u64 },
-    CJr     { rs1 : usize},
-    CMv     { rs1 : usize, rs2 : usize},
+    CJr     { rs1 : usize },
+    CMv     { rs1 : usize, rs2 : usize },
     CEBreak,
     CJalr   { rs1 : usize },
     CAdd    { rsrd : usize, rs2 : usize },

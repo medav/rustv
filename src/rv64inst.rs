@@ -201,7 +201,7 @@ fn pre_decode(rinst : &RawInst) -> InstSpec {
         _ => InstSpec(
             num::FromPrimitive::from_u32(rinst.raw & 0b1111111)
                 .expect("Unknown opcode!"), 
-            bit_range_get!(rinst.raw, (12, 13)) as usize),
+            bit_range_get!(rinst.raw, (12, 14)) as usize),
     }
 }
 
@@ -242,30 +242,6 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
     match spec {
         //
         // Base Integer Instructions
-        //
-
-        // InstSpec(InstOpcode::OPIMM32, funct3) => DecodedInst::OpImm32 {
-        //     func : num::FromPrimitive::from_usize(funct3).expect("Unknown funct!"),
-        //     rs1 : rs1(rinst),
-        //     rd : rd(rinst),
-        //     imm : immgen!(I, rinst.raw)
-        // },
-        // InstSpec(InstOpcode::OPIMM, funct3) => DecodedInst::OpImm {
-        //     func : num::FromPrimitive::from_usize(funct3).expect("Unknown funct!"),
-        //     rs1 : rs1(rinst),
-        //     rd : rd(rinst),
-        //     imm : immgen!(I, rinst.raw)
-        // },
-        // InstSpec(InstOpcode::OP32, funct3) => DecodedInst::Op32 {
-        //     func : num::FromPrimitive::from_usize(funct3).expect("Unknown funct!"),
-        //     func_ex : funct7_32(rinst),
-        //     rs1 : rs1(rinst),
-        //     rs2 : rs2(rinst),
-        //     rd : rd(rinst)
-        // },
-
-        //
-        // InstOpcode::OP
         //
 
         InstSpec(InstOpcode::OP, 0) => {
@@ -326,7 +302,7 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
             rs2 : rs2(rinst),
             rd : rd(rinst)
         },
-        InstSpec(InstOpcode::OP, 6) => DecodedInst::And {
+        InstSpec(InstOpcode::OP, 7) => DecodedInst::And {
             rs1 : rs1(rinst),
             rs2 : rs2(rinst),
             rd : rd(rinst)
@@ -371,7 +347,7 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
                     rs2 : rs2(rinst),
                     rd : rd(rinst)
                 },
-                _ => panic!("Invalid funct7!")
+                _ => panic!("Invalid funct7: {}", funct7)
             }
         },
 
@@ -420,19 +396,19 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
             shamt : immgen!(I, rinst.raw) & 0b111111
         },
         InstSpec(InstOpcode::OPIMM, 5) => {
-            let funct7 = bit_range_get!(rinst.raw, (25, 31));
-            match funct7 {
-                0b0000000 => DecodedInst::Srli {
+            let funct6 = bit_range_get!(rinst.raw, (26, 31));
+            match funct6 {
+                0b000000 => DecodedInst::Srli {
                     rs1 : rs1(rinst),
                     rd : rd(rinst),
                     shamt : immgen!(I, rinst.raw) & 0b111111
                 },
-                0b0100000 => DecodedInst::Srai {
+                0b010000 => DecodedInst::Srai {
                     rs1 : rs1(rinst),
                     rd : rd(rinst),
                     shamt : immgen!(I, rinst.raw) & 0b111111
                 },
-                _ => panic!("Invalid funct7!")
+                _ => panic!("Invalid funct6: {}", funct6)
             }
         },
 
@@ -468,16 +444,20 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
                 0b0000000 => DecodedInst::Srliw {
                     rs1 : rs1(rinst),
                     rd : rd(rinst),
-                    shamt : immgen!(I, rinst.raw) & 0b111111
+                    shamt : immgen!(I, rinst.raw) & 0b11111
                 },
                 0b0100000 => DecodedInst::Sraiw {
                     rs1 : rs1(rinst),
                     rd : rd(rinst),
-                    shamt : immgen!(I, rinst.raw) & 0b111111
+                    shamt : immgen!(I, rinst.raw) & 0b11111
                 },
                 _ => panic!("Invalid funct7!")
             }
         },
+
+        //
+        // Other Regular Instructions
+        //
 
         InstSpec(InstOpcode::LUI, _) => DecodedInst::Lui {
             rd : rd(rinst),
@@ -514,6 +494,17 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
             rs2 : rs2(rinst),
             imm : immgen!(S, rinst.raw)
         },
+        InstSpec(InstOpcode::SYSTEM, 0) => {
+            let rs1 = rs1(rinst);
+            let rs2 = rs2(rinst);
+            let imm = immgen!(U, rinst.raw);
+
+            match (rs1, rs2, imm) {
+                (0, 0, 0) => DecodedInst::ECall,
+                (0, 0, 1) => DecodedInst::EBreak,
+                _ => panic!("Invalid decode for InstOpcode::SYSTEM!")
+            }
+        }
         
         //
         // Compressed Quandrant 0 Instructions
@@ -705,6 +696,6 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
         },
 
 
-        _ => panic!("Unknown instruction!")
+        x => panic!("Unknown instruction: {:?}", x)
     }
 }

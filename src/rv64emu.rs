@@ -13,7 +13,7 @@ pub struct ArchState {
     pub regs : [u64; 32]
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ExecResult {
     Continue,
     Trap,
@@ -56,87 +56,77 @@ pub fn exec_inst(
     use DecodedInst::*;
     use ExecResult::*;
 
+    macro_rules! op_inst {
+        ($arch:ident, $rs1:expr, $rs2:expr, $rd:expr, $func:ident) => {
+            {
+                regw($arch, $rd, rv64alu::$func(regr($arch, $rs1), regr($arch, $rs2)));
+                $arch.pc = rv64alu::add($arch.pc, 4);
+                Continue
+            }
+        }
+    }
+
+    macro_rules! opimm_inst {
+        ($arch:ident, $rs1:expr, $imm:expr, $rd:expr, $func:ident) => {
+            {
+                regw($arch, $rd, rv64alu::$func(regr($arch, $rs1), $imm));
+                $arch.pc = rv64alu::add($arch.pc, 4);
+                Continue
+            }
+        }
+    }
+
     match inst {
 
         //
         // Op
         //
 
-        Add  {rs1, rs2, rd} => {
-            regw(arch, *rd, rv64alu::add(regr(arch, *rs1), regr(arch, *rs2)));
-            arch.pc = rv64alu::add(arch.pc, 4);
-            Continue
-        },
-        Sub  {rs1, rs2, rd} => {
-            regw(arch, *rd, rv64alu::sub(regr(arch, *rs1), regr(arch, *rs2)));
-            arch.pc = rv64alu::add(arch.pc, 4);
-            Continue
-        },
-        Sll  {rs1, rs2, rd} => {
-            regw(arch, *rd, rv64alu::sll(regr(arch, *rs1), regr(arch, *rs2)));
-            arch.pc = rv64alu::add(arch.pc, 4);
-            Continue
-        },
-        // Slt  {rs1, rs2, rd} => {
-
-        // },
-        // Sltu {rs1, rs2, rd} => {
-
-        // },
-        // Xor  {rs1, rs2, rd} => {
-
-        // },
-        // Srl  {rs1, rs2, rd} => {
-
-        // },
-        // Sra  {rs1, rs2, rd} => {
-
-        // },
-        // Or   {rs1, rs2, rd} => {
-
-        // },
-        // And  {rs1, rs2, rd} => {
-
-        // },
+        Add {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, add),
+        Sub {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, sub),
+        Sll {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, sll),
+        Slt {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, slt),
+        Sltu {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, sltu),
+        Xor {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, xor),
+        Srl {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, srl),
+        Sra {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, sra),
+        Or {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, or),
+        And {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, and),
 
         //
         // OpImm
         //
 
-        Addi  {rs1, rd, imm} => {
-            regw(arch, *rd, rv64alu::add(regr(arch, *rs1), *imm));
-            arch.pc = rv64alu::add(arch.pc, 4);
-            Continue
-        },
-        Subi  {rs1, rd, imm} => {
-            regw(arch, *rd, rv64alu::sub(regr(arch, *rs1), *imm));
-            arch.pc = rv64alu::add(arch.pc, 4);
-            Continue
-        },
-        // Slti  {rs1, rd, imm} => {
+        Addi {rs1, imm, rd} => opimm_inst!(arch, *rs1, *imm, *rd, add),
+        Subi {rs1, imm, rd} => opimm_inst!(arch, *rs1, *imm, *rd, sub),
+        Slli {rs1, shamt, rd} => opimm_inst!(arch, *rs1, *shamt, *rd, sll),
+        Slti {rs1, imm, rd} => opimm_inst!(arch, *rs1, *imm, *rd, slt),
+        Sltiu {rs1, imm, rd} => opimm_inst!(arch, *rs1, *imm, *rd, sltu),
+        Xori {rs1, imm, rd} => opimm_inst!(arch, *rs1, *imm, *rd, xor),
+        Srli {rs1, shamt, rd} => opimm_inst!(arch, *rs1, *shamt, *rd, srl),
+        Srai {rs1, shamt, rd} => opimm_inst!(arch, *rs1, *shamt, *rd, sra),
+        Ori {rs1, imm, rd} => opimm_inst!(arch, *rs1, *imm, *rd, or),
+        Andi {rs1, imm, rd} => opimm_inst!(arch, *rs1, *imm, *rd, and),
 
-        // },
-        // Sltiu {rs1, rd, imm} => {
+        //
+        // Op32
+        //
 
-        // },
-        // Xori  {rs1, rd, imm} => {
+        Addw {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, addw),
+        Subw {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, subw),
+        Sllw {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, sllw),
+        Srlw {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, srlw),
+        Sraw {rs1, rs2, rd} => op_inst!(arch, *rs1, *rs2, *rd, sraw),
 
-        // },
-        // Ori   {rs1, rd, imm} => {
+        //
+        // OpImm32
+        //
 
-        // },
-        // Andi  {rs1, rd, imm} => {
-
-        // },
-        // Slli  {rs1, rd, imm} => {
-
-        // },
-        // Srli  {rs1, rd, imm} => {
-
-        // },
-        // Srai  {rs1, rd, imm} => {
-
-        // },
+        Addiw {rs1, imm, rd} => opimm_inst!(arch, *rs1, *imm, *rd, addw),
+        Subiw {rs1, imm, rd} => opimm_inst!(arch, *rs1, *imm, *rd, subw),
+        Slliw {rs1, shamt, rd} => opimm_inst!(arch, *rs1, *shamt, *rd, sllw),
+        Srliw {rs1, shamt, rd} => opimm_inst!(arch, *rs1, *shamt, *rd, srlw),
+        Sraiw {rs1, shamt, rd} => opimm_inst!(arch, *rs1, *shamt, *rd, sraw),
 
         Lui {rd, imm} => {
             regw(arch, *rd, *imm);
@@ -144,9 +134,24 @@ pub fn exec_inst(
             Continue
         },
 
+        Auipc {rd, imm} => {
+            regw(arch, *rd, rv64alu::add(arch.pc, *imm));
+            arch.pc = rv64alu::add(arch.pc, 4);
+            Continue
+        }
+
         Jal {rd, imm} => {
             regw(arch, *rd, rv64alu::add(arch.pc, 4));
             arch.pc = rv64alu::add(arch.pc, *imm);
+            Continue
+        },
+
+        Jalr {rs1, rd, imm} => {
+            let target = rv64alu::add(regr(arch, *rs1), *imm);
+            let ra = rv64alu::add(arch.pc, 4);
+            regw(arch, *rd, ra);
+            arch.pc = target;
+            // println!("---");
             Continue
         },
 
@@ -175,15 +180,18 @@ pub fn exec_inst(
             let addr = rv64alu::add(regr(arch, *rs1), *imm);
 
             let val = match width {
-                Byte => sign_ext64!(8, read8(mem, addr)),
-                Half => sign_ext64!(16, read16(mem, addr)),
-                Word => sign_ext64!(32, read32(mem, addr)),
-                Double => read64(mem, addr),
-                ByteU => read8(mem, addr),
-                HalfU => read16(mem, addr),
-                WordU => read32(mem, addr),
+                LoadStoreWidth::Byte => sign_ext64!(8, read8(mem, addr)),
+                LoadStoreWidth::Half => sign_ext64!(16, read16(mem, addr)),
+                LoadStoreWidth::Word => sign_ext64!(32, read32(mem, addr)),
+                LoadStoreWidth::Double => read64(mem, addr),
+                LoadStoreWidth::ByteU => read8(mem, addr),
+                LoadStoreWidth::HalfU => read16(mem, addr),
+                LoadStoreWidth::WordU => read32(mem, addr),
                 _ => panic!("Unimplemented")
             };
+            
+            // println!("Load ({:?}) [{}] => {}", width, addr, val);
+            regw(arch, *rd, val);
             
             arch.pc = rv64alu::add(arch.pc, 4);
             Continue
@@ -193,16 +201,30 @@ pub fn exec_inst(
             let addr = rv64alu::add(regr(arch, *rs1), *imm);
             let val = regr(arch, *rs2);
 
+            // println!("Store ({:?}) [{}] <= {}", width, addr, val);
+
             match width {
-                Byte => write8(mem, addr, val.into()),
-                Half => write16(mem, addr, val.into()),
-                Word => write32(mem, addr, val.into()),
-                Double => write64(mem, addr, val),
+                LoadStoreWidth::Byte => write8(mem, addr, val.into()),
+                LoadStoreWidth::Half => write16(mem, addr, val.into()),
+                LoadStoreWidth::Word => write32(mem, addr, val.into()),
+                LoadStoreWidth::Double => write64(mem, addr, val),
                 _ => panic!("Unimplemented")
             };
             
             arch.pc = rv64alu::add(arch.pc, 4);
             Continue
+        },
+
+        //
+        // System instructions
+        //
+
+        ECall => {
+            Trap
+        },
+
+        EBreak => {
+            Halt
         },
 
         //
@@ -220,9 +242,9 @@ pub fn exec_inst(
             let val = regr(arch, *rs2);
 
             match width {
-                Cfd => panic!("Unimplemented"),
-                Cw => write32(mem, addr, val.into()),
-                Cd => write64(mem, addr, val.into())
+                CLoadStoreWidth::Cfd => panic!("Unimplemented"),
+                CLoadStoreWidth::Cw => write32(mem, addr, val.into()),
+                CLoadStoreWidth::Cd => write64(mem, addr, val.into())
             };
             
             arch.pc = rv64alu::add(arch.pc, 2);
@@ -267,11 +289,29 @@ pub fn exec_inst(
         // Compressed Quandrant 2 Instructions
         //
 
+
+        CLdsp {rd, imm} => {
+            let addr = regr(arch, 2) + *imm;
+            let val = read64(mem, addr);
+            regw(arch, *rd, val);
+            arch.pc = rv64alu::add(arch.pc, 2);
+            Continue
+        },
+
+        CJr {rs1} => {
+            arch.pc = regr(arch, *rs1);
+            Continue
+        }
+
         CMv {rs1, rs2} => {
             regw(arch, *rs1, regr(arch, *rs2));
             arch.pc = rv64alu::add(arch.pc, 2);
             Continue
         },
+
+        CEBreak => {
+            Halt
+        }
 
         CSdsp {rs2, imm} => {
             let addr = regr(arch, 2) + *imm;
