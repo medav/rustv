@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::syscalls::*;
 use crate::memif::*;
 use crate::bitops::*;
 use crate::rv64defs::*;
@@ -323,4 +324,22 @@ pub fn exec_inst(
         x => panic!("Unimplemented instruction: {:?}", x)
     }
 
+}
+
+pub fn rv64_parse_syscall(arch : &mut ArchState) -> Syscall {
+    let raw_num = regr(arch, 17);
+
+    Syscall {
+        num : num::FromPrimitive::from_u64(raw_num)
+            .expect(&format!("Unknown syscall: {}", raw_num)),
+        args : [
+            regr(arch, 10),
+            regr(arch, 11),
+            regr(arch, 12),
+            regr(arch, 13),
+            regr(arch, 14),
+            regr(arch, 15),
+            regr(arch, 16),
+        ]
+    }
 }

@@ -6,6 +6,7 @@ extern crate num_derive;
 use std::fs::File;
 use std::io::Read;
 
+mod syscalls;
 #[macro_use]
 mod bitops;
 mod memif;
@@ -60,7 +61,13 @@ fn main() {
 
         let res = exec_inst(&mut arch, &mut arr, &decoded);
 
-        if res == ExecResult::Halt {
+        if res == ExecResult::Trap {
+            println!("{:?}", arch.regs);
+            let syscall = rv64_parse_syscall(&mut arch);
+            syscalls::exec_syscall(&syscall);
+            break;
+        }
+        else if res == ExecResult::Halt {
             break;
         }
     }
