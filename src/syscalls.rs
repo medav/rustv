@@ -1,4 +1,5 @@
 
+use crate::memif::*;
 
 #[derive(Debug, PartialEq, FromPrimitive)]
 pub enum SyscallNum {
@@ -51,10 +52,33 @@ pub struct Syscall {
     pub args : [u64; 7]
 }
 
-pub fn exec_syscall(syscall : &Syscall) {
+unsafe fn get_addr(mem : &mut dyn MemIf, off : u64) -> *mut u8  {
+    let base = mem.mut_ptr();
+    base.add(off as usize)
+}
+
+pub fn exec_syscall(syscall : &Syscall, mem : &mut dyn MemIf) -> i32 {
+    println!("Syscall: {:?}", syscall);
+
     match &syscall.num {
-        Fstat => {
-            
+        SyscallNum::Fstat => {
+            let mem_base = mem.mut_ptr();
+
+            unsafe {
+                libc::fstat(
+                    syscall.args[0] as i32, 
+                    get_addr(mem, syscall.args[1]) as *mut libc::stat)
+            }
+        },
+        SyscallNum::Write => {
+            let mem_base = mem.mut_ptr();
+
+            unsafe {
+                libc::write(
+                    syscall.args[0] as i32, 
+                    get_addr(mem, syscall.args[1]) as *mut libc::c_void,
+                    syscall.args[1] as usize) as i32
+            }
         },
         x => panic!("Unimplemented syscall: {:?}", x)
     }

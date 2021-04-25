@@ -37,7 +37,8 @@ macro_rules! immgen {
         )
     };
     (U, $v:expr) => {
-        bit_range_map!($v as u64, (12, 31), (12, 31))
+        sign_ext64!(32,
+            bit_range_map!($v as u64, (12, 31), (12, 31)))
     };
     (J, $v:expr) => {
         sign_ext64!(21,
@@ -200,7 +201,7 @@ fn pre_decode(rinst : &RawInst) -> InstSpec {
         2 => InstSpec(C2, bit_range_get!(rinst.raw, (13, 15)) as usize),
         _ => InstSpec(
             num::FromPrimitive::from_u32(rinst.raw & 0b1111111)
-                .expect("Unknown opcode!"), 
+                .expect("Unknown opcode!"),
             bit_range_get!(rinst.raw, (12, 14)) as usize),
     }
 }
@@ -259,7 +260,7 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
                 },
                 _ => panic!("Invalid funct7!")
             }
-            
+
         },
         InstSpec(InstOpcode::OP, 1) => DecodedInst::Sll {
             rs1 : rs1(rinst),
@@ -327,7 +328,7 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
                 },
                 _ => panic!("Invalid funct7!")
             }
-            
+
         },
         InstSpec(InstOpcode::OP32, 1) => DecodedInst::Sllw {
             rs1 : rs1(rinst),
@@ -416,22 +417,10 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
         // InstOpcode::OpImm32
         //
 
-        InstSpec(InstOpcode::OPIMM32, 0) => {
-            let funct7 = bit_range_get!(rinst.raw, (25, 31));
-            match funct7 {
-                0b0000000 => DecodedInst::Addiw {
-                    rs1 : rs1(rinst),
-                    rd : rd(rinst),
-                    imm : immgen!(I, rinst.raw)
-                },
-                0b0100000 => DecodedInst::Subiw {
-                    rs1 : rs1(rinst),
-                    rd : rd(rinst),
-                    imm : immgen!(I, rinst.raw)
-                },
-                _ => panic!("Invalid funct7!")
-            }
-            
+        InstSpec(InstOpcode::OPIMM32, 0) => DecodedInst::Addiw {
+            rs1 : rs1(rinst),
+            rd : rd(rinst),
+            imm : immgen!(I, rinst.raw)
         },
         InstSpec(InstOpcode::OP32, 1) => DecodedInst::Slliw {
             rs1 : rs1(rinst),
@@ -499,17 +488,19 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
             let rs2 = rs2(rinst);
             let imm = immgen!(U, rinst.raw);
 
+            println!("{}, {}, {}", rs1, rs2, imm);
+
             match (rs1, rs2, imm) {
                 (0, 0, 0) => DecodedInst::ECall,
                 (0, 0, 1) => DecodedInst::EBreak,
-                _ => panic!("Invalid decode for InstOpcode::SYSTEM!")
+                _ => DecodedInst::EBreak //panic!("Invalid decode for InstOpcode::SYSTEM!")
             }
         }
-        
+
         //
         // Compressed Quandrant 0 Instructions
         //
-        
+
         InstSpec(InstOpcode::C0, 0) => DecodedInst::CAddi4spn {
             rd : rs2_c(rinst) + 8,
             imm : immgen!(C0_ADDI4SPN, rinst.raw)
@@ -550,7 +541,7 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
             rs2 : rs2_c(rinst) + 8,
             imm : immgen!(C0_LSD, rinst.raw)
         },
-        
+
         //
         // Compressed Quandrant 1 Instructions
         //
@@ -637,7 +628,7 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
             rs1 : rs1_c(rinst) + 8,
             imm : immgen!(C1_BRA, rinst.raw)
         },
-        
+
         //
         // Compressed Quandrant 2 Instructions
         //

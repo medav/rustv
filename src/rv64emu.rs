@@ -190,10 +190,10 @@ pub fn exec_inst(
                 LoadStoreWidth::WordU => read32(mem, addr),
                 _ => panic!("Unimplemented")
             };
-            
-            // println!("Load ({:?}) [{}] => {}", width, addr, val);
+
+            println!("Load ({:?}) [{:x}] => {}", width, addr, val);
             regw(arch, *rd, val);
-            
+
             arch.pc = rv64alu::add(arch.pc, 4);
             Continue
         },
@@ -202,7 +202,7 @@ pub fn exec_inst(
             let addr = rv64alu::add(regr(arch, *rs1), *imm);
             let val = regr(arch, *rs2);
 
-            // println!("Store ({:?}) [{}] <= {}", width, addr, val);
+            println!("Store ({:?}) [{:x}] <= {}", width, addr, val);
 
             match width {
                 LoadStoreWidth::Byte => write8(mem, addr, val.into()),
@@ -211,7 +211,7 @@ pub fn exec_inst(
                 LoadStoreWidth::Double => write64(mem, addr, val),
                 _ => panic!("Unimplemented")
             };
-            
+
             arch.pc = rv64alu::add(arch.pc, 4);
             Continue
         },
@@ -221,6 +221,7 @@ pub fn exec_inst(
         //
 
         ECall => {
+            arch.pc = rv64alu::add(arch.pc, 4);
             Trap
         },
 
@@ -247,7 +248,7 @@ pub fn exec_inst(
                 CLoadStoreWidth::Cw => write32(mem, addr, val.into()),
                 CLoadStoreWidth::Cd => write64(mem, addr, val.into())
             };
-            
+
             arch.pc = rv64alu::add(arch.pc, 2);
             Continue
         },
@@ -285,7 +286,7 @@ pub fn exec_inst(
             arch.pc = rv64alu::add(arch.pc, 2);
             Continue
         },
-        
+
         //
         // Compressed Quandrant 2 Instructions
         //

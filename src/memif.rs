@@ -4,6 +4,7 @@ use crate::bitops;
 pub trait MemIf {
     fn read(&self, addr : u64) -> u8;
     fn write(&mut self, addr : u64, value : u8);
+    fn mut_ptr(&mut self) -> *mut u8;
 }
 
 #[inline(always)]
