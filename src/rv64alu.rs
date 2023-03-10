@@ -122,12 +122,12 @@ pub fn sra(v : u64, shamt : u64) -> u64 {
 
 #[inline(always)]
 pub fn sllw(v : u64, shamt : u64) -> u64 {
-    sign_ext64!(32, sll(v, shamt) & 0xFFFFFFFF)
+    sign_ext64!(32, sll(v, shamt & 0x1F) & 0xFFFFFFFF)
 }
 
 #[inline(always)]
 pub fn srlw(v : u64, shamt : u64) -> u64 {
-    sign_ext64!(32, srl(v, shamt) & 0xFFFFFFFF)
+    sign_ext64!(32, srl(v, shamt  & 0x1F) & 0xFFFFFFFF)
 }
 
 #[inline(always)]

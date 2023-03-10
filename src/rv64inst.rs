@@ -171,6 +171,10 @@ macro_rules! immgen {
     // C2 Compressed Instructions
     //
 
+    (C2_SLLI, $v:expr) => {
+        bit_range_map!($v as u64, (2, 6), (0, 4)) |
+        bit_range_map!($v as u64, (12, 12), (5, 5))
+    };
     (C2_LD, $v:expr) => {
         bit_range_map!($v as u64, (2, 4), (6, 8)) |
         bit_range_map!($v as u64, (5, 6), (3, 4)) |
@@ -207,17 +211,17 @@ fn pre_decode(rinst : &RawInst) -> InstSpec {
 }
 
 #[inline(always)]
-fn rs1(rinst : &RawInst) -> usize {
+pub fn rs1(rinst : &RawInst) -> usize {
     bit_range_get!(rinst.raw, (15, 19)) as usize
 }
 
 #[inline(always)]
-fn rs2(rinst : &RawInst) -> usize {
+pub fn rs2(rinst : &RawInst) -> usize {
     bit_range_get!(rinst.raw, (20, 24)) as usize
 }
 
 #[inline(always)]
-fn rd(rinst : &RawInst) -> usize {
+pub fn rd(rinst : &RawInst) -> usize {
     bit_range_get!(rinst.raw, (7, 11)) as usize
 }
 
@@ -227,12 +231,12 @@ fn funct7_32(rinst : &RawInst) -> u64 {
 }
 
 #[inline(always)]
-fn rs1_c(rinst : &RawInst) -> usize {
+pub fn rs1_c(rinst : &RawInst) -> usize {
     bit_range_get!(rinst.raw, (7, 9)) as usize
 }
 
 #[inline(always)]
-fn rs2_c(rinst : &RawInst) -> usize {
+pub fn rs2_c(rinst : &RawInst) -> usize {
     bit_range_get!(rinst.raw, (2, 4)) as usize
 }
 
@@ -422,12 +426,12 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
             rd : rd(rinst),
             imm : immgen!(I, rinst.raw)
         },
-        InstSpec(InstOpcode::OP32, 1) => DecodedInst::Slliw {
+        InstSpec(InstOpcode::OPIMM32, 1) => DecodedInst::Slliw {
             rs1 : rs1(rinst),
             rd : rd(rinst),
             shamt : immgen!(I, rinst.raw)
         },
-        InstSpec(InstOpcode::OP32, 5) => {
+        InstSpec(InstOpcode::OPIMM32, 5) => {
             let funct7 = bit_range_get!(rinst.raw, (25, 31));
             match funct7 {
                 0b0000000 => DecodedInst::Srliw {
@@ -564,7 +568,8 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
                 2 => DecodedInst::CAddi16sp {
                     imm : immgen!(C1_ADDI16SP, rinst.raw)
                 },
-                n => DecodedInst::CLui {
+                _ => DecodedInst::CLui {
+                    rd : rd,
                     imm : immgen!(C1_LUI, rinst.raw)
                 }
             }
@@ -620,11 +625,14 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
         InstSpec(InstOpcode::C1, 5) => DecodedInst::CJ {
             imm : immgen!(C1_J_JAL, rinst.raw)
         },
-        InstSpec(InstOpcode::C1, 6) => DecodedInst::CBeq {
+        // InstSpec(InstOpcode::C1, 1) => DecodedInst::CJal {
+        //     imm : immgen!(C1_J_JAL, rinst.raw)
+        // },
+        InstSpec(InstOpcode::C1, 6) => DecodedInst::CBeqz {
             rs1 : rs1_c(rinst) + 8,
             imm : immgen!(C1_BRA, rinst.raw)
         },
-        InstSpec(InstOpcode::C1, 7) => DecodedInst::CBne {
+        InstSpec(InstOpcode::C1, 7) => DecodedInst::CBnez {
             rs1 : rs1_c(rinst) + 8,
             imm : immgen!(C1_BRA, rinst.raw)
         },
@@ -635,17 +643,20 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
 
         InstSpec(InstOpcode::C2, 0) => DecodedInst::CSlli {
             rsrd : rd(rinst),
-            imm : immgen!(C1_OPIMM, rinst.raw)
+            shamt : immgen!(C2_SLLI, rinst.raw)
         },
-        InstSpec(InstOpcode::C2, 1) => DecodedInst::CFldsp {
+        InstSpec(InstOpcode::C2, 1) => DecodedInst::CLoadStack {
+            width : CLoadStoreWidth::Cfd,
             rd : rd(rinst),
             imm : immgen!(C2_LD, rinst.raw)
         },
-        InstSpec(InstOpcode::C2, 2) => DecodedInst::CLwsp {
+        InstSpec(InstOpcode::C2, 2) => DecodedInst::CLoadStack {
+            width : CLoadStoreWidth::Cw,
             rd : rd(rinst),
-            imm : immgen!(C2_LW, rinst.raw)
+            imm : immgen!(C2_LD, rinst.raw)
         },
-        InstSpec(InstOpcode::C2, 3) => DecodedInst::CLdsp {
+        InstSpec(InstOpcode::C2, 3) => DecodedInst::CLoadStack {
+            width : CLoadStoreWidth::Cd,
             rd : rd(rinst),
             imm : immgen!(C2_LD, rinst.raw)
         },
@@ -673,15 +684,18 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
                 _ => panic!("Invalid decode for C2 Opcode!")
             }
         },
-        InstSpec(InstOpcode::C2, 5) => DecodedInst::CFsdsp {
+        InstSpec(InstOpcode::C2, 5) => DecodedInst::CStoreStack {
+            width : CLoadStoreWidth::Cfd,
             rs2 : bit_range_get!(rinst.raw, (2, 6)) as usize,
             imm : immgen!(C2_SD, rinst.raw)
         },
-        InstSpec(InstOpcode::C2, 6) => DecodedInst::CSwsp {
+        InstSpec(InstOpcode::C2, 6) => DecodedInst::CStoreStack {
+            width : CLoadStoreWidth::Cw,
             rs2 : bit_range_get!(rinst.raw, (2, 6)) as usize,
             imm : immgen!(C2_SW, rinst.raw)
         },
-        InstSpec(InstOpcode::C2, 7) => DecodedInst::CSdsp {
+        InstSpec(InstOpcode::C2, 7) => DecodedInst::CStoreStack {
+            width : CLoadStoreWidth::Cd,
             rs2 : bit_range_get!(rinst.raw, (2, 6)) as usize,
             imm : immgen!(C2_SD, rinst.raw)
         },

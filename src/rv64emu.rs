@@ -67,11 +67,31 @@ pub fn exec_inst(
         }
     }
 
+    macro_rules! c_op_inst {
+        ($arch:ident, $rs1:expr, $rs2:expr, $rd:expr, $func:ident) => {
+            {
+                regw($arch, $rd, rv64alu::$func(regr($arch, $rs1), regr($arch, $rs2)));
+                $arch.pc = rv64alu::add($arch.pc, 2);
+                Continue
+            }
+        }
+    }
+
     macro_rules! opimm_inst {
         ($arch:ident, $rs1:expr, $imm:expr, $rd:expr, $func:ident) => {
             {
                 regw($arch, $rd, rv64alu::$func(regr($arch, $rs1), $imm));
                 $arch.pc = rv64alu::add($arch.pc, 4);
+                Continue
+            }
+        }
+    }
+
+    macro_rules! c_opimm_inst {
+        ($arch:ident, $rs1:expr, $imm:expr, $rd:expr, $func:ident) => {
+            {
+                regw($arch, $rd, rv64alu::$func(regr($arch, $rs1), $imm));
+                $arch.pc = rv64alu::add($arch.pc, 2);
                 Continue
             }
         }
@@ -239,6 +259,22 @@ pub fn exec_inst(
             Continue
         },
 
+        CLoad {width, rs1, rd, imm} => {
+            let addr = rv64alu::add(regr(arch, *rs1), *imm);
+
+            let val = match width {
+                CLoadStoreWidth::Cfd => panic!("Unimplemented"),
+                CLoadStoreWidth::Cw => read32(mem, addr),
+                CLoadStoreWidth::Cd => read64(mem, addr)
+            };
+
+            println!("Load ({:?}) [{:x}] => {}", width, addr, val);
+            regw(arch, *rd, val);
+
+            arch.pc = rv64alu::add(arch.pc, 2);
+            Continue
+        },
+
         CStore {width, rs1, rs2, imm} => {
             let addr = rv64alu::add(regr(arch, *rs1), *imm);
             let val = regr(arch, *rs2);
@@ -275,15 +311,59 @@ pub fn exec_inst(
             Continue
         },
 
+        CLui {rd, imm} => {
+            regw(arch, *rd, *imm);
+            arch.pc = rv64alu::add(arch.pc, 2);
+            Continue
+        },
+
         CAddi16sp {imm} => {
             regw(arch, 2, rv64alu::add(regr(arch, 2), *imm));
             arch.pc = rv64alu::add(arch.pc, 2);
             Continue
         },
 
-        CAddw {rsrd, rs2} => {
-            regw(arch, *rsrd, rv64alu::add(regr(arch, *rsrd), regr(arch, *rs2)));
-            arch.pc = rv64alu::add(arch.pc, 2);
+        CAdd {rsrd, rs2} => c_op_inst!(arch, *rsrd, *rs2, *rsrd, add),
+        CAddw {rsrd, rs2} => c_op_inst!(arch, *rsrd, *rs2, *rsrd, addw),
+        CSub {rsrd, rs2} => c_op_inst!(arch, *rsrd, *rs2, *rsrd, sub),
+        CSubw {rsrd, rs2} => c_op_inst!(arch, *rsrd, *rs2, *rsrd, subw),
+
+        COr {rsrd, rs2} => c_op_inst!(arch, *rsrd, *rs2, *rsrd, or),
+        CAnd {rsrd, rs2} => c_op_inst!(arch, *rsrd, *rs2, *rsrd, and),
+        CXor {rsrd, rs2} => c_op_inst!(arch, *rsrd, *rs2, *rsrd, xor),
+
+        CBeqz {rs1, imm} => {
+            if regr(arch, *rs1) == 0 {
+                arch.pc = rv64alu::add(arch.pc, *imm);
+            }
+            else {
+                arch.pc = rv64alu::add(arch.pc, 2);
+            }
+
+            Continue
+        },
+
+        CBnez {rs1, imm} => {
+            if regr(arch, *rs1) != 0 {
+                arch.pc = rv64alu::add(arch.pc, *imm);
+            }
+            else {
+                arch.pc = rv64alu::add(arch.pc, 2);
+            }
+
+            Continue
+        },
+
+        CJ {imm} => {
+            arch.pc = rv64alu::add(arch.pc, *imm);
+            Continue
+        },
+
+
+        CJal {imm} => {
+            let next_pc = rv64alu::add(arch.pc, 2);
+            arch.pc = rv64alu::add(arch.pc, *imm);
+            regw(arch, 1, next_pc);
             Continue
         },
 
@@ -291,11 +371,36 @@ pub fn exec_inst(
         // Compressed Quandrant 2 Instructions
         //
 
+        CSlli {rsrd, shamt} =>
+            c_opimm_inst!(arch, *rsrd, *shamt, *rsrd, sll),
 
-        CLdsp {rd, imm} => {
+
+        CLoadStack {width, rd, imm} => {
             let addr = regr(arch, 2) + *imm;
-            let val = read64(mem, addr);
+
+            let val = match width {
+                CLoadStoreWidth::Cfd => panic!("Unimplemented"),
+                CLoadStoreWidth::Cw => read32(mem, addr),
+                CLoadStoreWidth::Cd => read64(mem, addr)
+            };
+
+            println!("Load ({:?}) [{:x}] => {}", width, addr, val);
             regw(arch, *rd, val);
+
+            arch.pc = rv64alu::add(arch.pc, 2);
+            Continue
+        },
+
+        CStoreStack {width, rs2, imm} => {
+            let addr = rv64alu::add(regr(arch, 2), *imm);
+            let val = regr(arch, *rs2);
+
+            match width {
+                CLoadStoreWidth::Cfd => panic!("Unimplemented"),
+                CLoadStoreWidth::Cw => write32(mem, addr, val.into()),
+                CLoadStoreWidth::Cd => write64(mem, addr, val.into())
+            };
+
             arch.pc = rv64alu::add(arch.pc, 2);
             Continue
         },
@@ -303,7 +408,15 @@ pub fn exec_inst(
         CJr {rs1} => {
             arch.pc = regr(arch, *rs1);
             Continue
-        }
+        },
+
+
+        CJalr {rs1} => {
+            let next_pc = rv64alu::add(arch.pc, 2);
+            arch.pc = regr(arch, *rs1);
+            regw(arch, 1, next_pc);
+            Continue
+        },
 
         CMv {rs1, rs2} => {
             regw(arch, *rs1, regr(arch, *rs2));

@@ -13,13 +13,13 @@ pub enum ArchWidth {
 }
 
 // #[derive(Debug, PartialEq)]
-// pub enum InstFormat { 
+// pub enum InstFormat {
 //     R, I, S, B, U, J,
 //     CR, CI, CSS, CIW, CL, CS, CB, CJ
 // }
 
 #[derive(Debug, PartialEq, FromPrimitive)]
-pub enum OpFunct { 
+pub enum OpFunct {
     AddSub = 0b000,
     Sll    = 0b001,
     Slt    = 0b010,
@@ -31,7 +31,7 @@ pub enum OpFunct {
 }
 
 #[derive(Debug, PartialEq, FromPrimitive)]
-pub enum LoadStoreWidth { 
+pub enum LoadStoreWidth {
     Byte   = 0b000,
     Half   = 0b001,
     Word   = 0b010,
@@ -42,7 +42,7 @@ pub enum LoadStoreWidth {
 }
 
 #[derive(Debug, PartialEq, FromPrimitive)]
-pub enum BranchType { 
+pub enum BranchType {
     Eq  = 0b000,
     Neq = 0b001,
     Lt  = 0b100,
@@ -110,7 +110,7 @@ pub enum DecodedInst {
     Sra   { rs1 : usize, rs2 : usize, rd : usize },
     Or    { rs1 : usize, rs2 : usize, rd : usize },
     And   { rs1 : usize, rs2 : usize, rd : usize },
-    
+
     // OpImm
     Addi  { rs1 : usize, rd : usize, imm : u64 },
     Subi  { rs1 : usize, rd : usize, imm : u64 },
@@ -141,7 +141,7 @@ pub enum DecodedInst {
     Auipc { rd : usize, imm : u64 },
     Jal   { rd : usize, imm : u64 },
     Jalr  { rs1 : usize, rd : usize, imm : u64 },
-    
+
     Branch { func : BranchType, rs1 : usize, rs2 : usize, imm : u64 },
     Load   { width : LoadStoreWidth, rs1 : usize, rd : usize, imm : u64 },
     Store  { width : LoadStoreWidth, rs1 : usize, rs2 : usize, imm : u64 },
@@ -158,10 +158,12 @@ pub enum DecodedInst {
     // Compressed Quandrant 0 Instructions
     //
 
-    CAddi4spn { rd : usize, imm : u64 },
-    CLoad     { width : CLoadStoreWidth, rs1 : usize, rd : usize, imm : u64 },
-    CStore    { width : CLoadStoreWidth, rs1 : usize, rs2 : usize, imm : u64 },
-    
+    CAddi4spn   { rd : usize, imm : u64 },
+    CLoad       { width : CLoadStoreWidth, rs1 : usize, rd : usize, imm : u64 },
+    CLoadStack  { width : CLoadStoreWidth, rd : usize, imm : u64 },
+    CStore      { width : CLoadStoreWidth, rs1 : usize, rs2 : usize, imm : u64 },
+    CStoreStack { width : CLoadStoreWidth, rs2 : usize, imm : u64 },
+
     //
     // Compressed Quandrant 1 Instructions
     //
@@ -171,7 +173,7 @@ pub enum DecodedInst {
     CAddiw    { rsrd : usize, imm : u64 },
     CLi       { rd : usize, imm : u64 },
     CAddi16sp { imm : u64 },
-    CLui      { imm : u64 },
+    CLui      { rd : usize, imm : u64 },
 
     CSrli     { rsrd : usize, imm : u64 },
     CSrai     { rsrd : usize, imm : u64 },
@@ -185,20 +187,16 @@ pub enum DecodedInst {
     CAddw     { rsrd : usize, rs2 : usize },
 
     CJ        { imm : u64 },
-    CBeq      { rs1 : usize, imm : u64 },
-    CBne      { rs1 : usize, imm : u64 },
-    
+    CJal      { imm : u64 },
+    CBeqz     { rs1 : usize, imm : u64 },
+    CBnez     { rs1 : usize, imm : u64 },
+
     //
     // Compressed Quandrant 2 Instructions
     //
 
-    CSlli   { rsrd : usize, imm : u64 },
+    CSlli   { rsrd : usize, shamt : u64 },
     // CSlli64 { rsrd : usize },
-    CFldsp  { rd : usize, imm : u64 },
-    CLwsp   { rd : usize, imm : u64 },
-    // CLqsp   { rd : usize, imm : u64 },
-    CFlwsp  { rd : usize, imm : u64 },
-    CLdsp   { rd : usize, imm : u64 },
     CJr     { rs1 : usize },
     CMv     { rs1 : usize, rs2 : usize },
     CEBreak,
