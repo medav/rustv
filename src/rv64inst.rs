@@ -670,7 +670,7 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
                     rs1 : rs1
                 },
                 (0, rs1, rs2) => DecodedInst::CMv {
-                    rs1 : rs1,
+                    rsrd : rs1,
                     rs2 : rs2
                 },
                 (1, 0, 0) => DecodedInst::CEBreak,

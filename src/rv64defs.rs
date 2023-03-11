@@ -198,7 +198,7 @@ pub enum DecodedInst {
     CSlli   { rsrd : usize, shamt : u64 },
     // CSlli64 { rsrd : usize },
     CJr     { rs1 : usize },
-    CMv     { rs1 : usize, rs2 : usize },
+    CMv     { rsrd : usize, rs2 : usize },
     CEBreak,
     CJalr   { rs1 : usize },
     CAdd    { rsrd : usize, rs2 : usize },
