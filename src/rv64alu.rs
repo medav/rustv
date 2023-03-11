@@ -132,5 +132,5 @@ pub fn srlw(v : u64, shamt : u64) -> u64 {
 
 #[inline(always)]
 pub fn sraw(v : u64, shamt : u64) -> u64 {
-    sign_ext64!(32, sraw(v, shamt) & 0xFFFFFFFF)
+    sign_ext64!(32, sra(v, shamt) & 0xFFFFFFFF)
 }
