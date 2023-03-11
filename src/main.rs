@@ -70,7 +70,7 @@ fn main() {
 
 
     loop {
-        let raw_inst = fetch_inst(&arch, &mut arr);
+        let raw_inst = arch.fetch_inst(&mut arr);
         // println!("{:04x}: {:?}", arch.pc, raw_inst);
         let decoded = decode(&raw_inst);
         // println!("{:?}", arch.regs);
@@ -79,7 +79,7 @@ fn main() {
 
 
 
-        let res = exec_inst(&mut arch, &mut arr, &decoded);
+        let res = arch.exec_inst(&mut arr, &decoded);
 
         if let DecodedInst::Jalr {rs1 , rd, imm } = decoded {
             if let Some(sym) = disasm_map.get(&arch.pc) {
@@ -107,7 +107,7 @@ fn main() {
 
         if res == ExecResult::Trap {
             println!("{:?}", arch.regs);
-            let syscall = rv64_parse_syscall(&mut arch);
+            let syscall = arch.rv64_parse_syscall();
             let res = syscalls::exec_syscall(&syscall, &mut arr);
             println!("Syscall result = {}", res);
             arch.regs[10] = res as u64;
