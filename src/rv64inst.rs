@@ -158,7 +158,7 @@ macro_rules! immgen {
         )
     };
     (C1_ADDI16SP, $v:expr) => {
-        sign_ext64!(6,
+        sign_ext64!(10,
             bit_range_map!($v as u64, (2, 2), (5, 5)) |
             bit_range_map!($v as u64, (3, 4), (7, 8)) |
             bit_range_map!($v as u64, (5, 5), (6, 6)) |
