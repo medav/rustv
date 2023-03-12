@@ -52,32 +52,46 @@ pub struct Syscall {
     pub args : [u64; 7]
 }
 
-unsafe fn get_addr(mem : &mut dyn MemIf, off : u64) -> *mut u8  {
-    let base = mem.mut_ptr();
-    base.add(off as usize)
-}
 
-pub fn exec_syscall(syscall : &Syscall, mem : &mut dyn MemIf) -> i32 {
-    println!("Syscall: {:?}", syscall);
+pub fn exec_syscall(syscall : &Syscall, mem : &mut dyn MemIf, debug : bool) -> u64 {
+    if debug {
+        println!("Syscall: {:?}", syscall);
+    }
 
     match &syscall.num {
         SyscallNum::Fstat => {
-            let mem_base = mem.mut_ptr();
-
             unsafe {
-                libc::fstat(
-                    syscall.args[0] as i32, 
-                    get_addr(mem, syscall.args[1]) as *mut libc::stat)
+                let stat = mem.mut_ptr(syscall.args[1]) as *mut libc::stat;
+                libc::fstat( syscall.args[0] as i32, stat) as u64
+            }
+        },
+        SyscallNum::Brk => {
+            match mem.brk(syscall.args[0]) {
+                Ok(new_heap_end) => new_heap_end,
+                _ => u64::MAX
             }
         },
         SyscallNum::Write => {
-            let mem_base = mem.mut_ptr();
-
             unsafe {
+                if debug {
+                    println!("Write count: {}", syscall.args[0]);
+                    let cstr : *mut u8 = mem.mut_ptr(syscall.args[1]);
+
+                    for i in 0..syscall.args[0] {
+                        println!("/{}/", *cstr.add(i as usize));
+                    }
+                }
+                // println!("{}", *cstr.add(0));
+                // println!("{}", *cstr.add(1));
+                // println!("{}", *cstr.add(2));
+                // println!("{}", *cstr.add(3));
+                // println!("{}", *cstr.add(4));
+                // println!("{}", *cstr.add(5));
+
                 libc::write(
-                    syscall.args[0] as i32, 
-                    get_addr(mem, syscall.args[1]) as *mut libc::c_void,
-                    syscall.args[1] as usize) as i32
+                    syscall.args[0] as i32,
+                    mem.mut_ptr(syscall.args[1]) as *mut libc::c_void,
+                    syscall.args[0] as usize) as u64
             }
         },
         x => panic!("Unimplemented syscall: {:?}", x)

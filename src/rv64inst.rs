@@ -81,12 +81,6 @@ macro_rules! immgen {
         bit_range_map!($v as u64, (7, 10),  (6, 9)) |
         bit_range_map!($v as u64, (11, 12), (4, 5))
     };
-    (C2_SLLI, $v:expr) => {
-        sign_ext64!(6,
-            bit_range_map!($v as u64, (2, 6), (0, 4)) |
-            bit_range_map!($v as u64, (12, 12), (5, 5))
-        )
-    };
 
     //
     // C0 Compressed Instructions
@@ -491,8 +485,6 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
             let rs1 = rs1(rinst);
             let rs2 = rs2(rinst);
             let imm = immgen!(U, rinst.raw);
-
-            println!("{}, {}, {}", rs1, rs2, imm);
 
             match (rs1, rs2, imm) {
                 (0, 0, 0) => DecodedInst::ECall,

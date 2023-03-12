@@ -10,6 +10,7 @@ use crate::rv64alu;
 
 #[derive(Debug)]
 pub struct ArchState {
+    pub debug : bool,
     pub pc : u64,
     pub regs : [u64; 32]
 }
@@ -22,6 +23,18 @@ pub enum ExecResult {
 }
 
 impl ArchState {
+    pub fn new() -> Self {
+        ArchState {
+            debug: false,
+            pc: 0,
+            regs: [0; 32]
+        }
+    }
+
+    pub fn set_stack_addr(&mut self, addr : u64) -> () {
+        self.regw(2, addr);
+    }
+
     pub fn fetch_inst(&self, mem : &mut dyn MemIf) -> RawInst {
         let low = read16(mem, self.pc);
 
@@ -36,18 +49,25 @@ impl ArchState {
 
     #[inline(always)]
     pub fn regr(&self, rnum : usize) -> u64 {
-        match rnum {
+        let res = match rnum {
             0 => 0,
             1..=31 => self.regs[rnum],
             _ => panic!("Invalid register!")
+        };
+
+        if self.debug {
+            println!("        x{} => {:016x}", rnum, res);
         }
+
+        res
     }
 
     #[inline(always)]
     pub fn regw(&mut self, rnum : usize, val : u64) {
-        if rnum == 2 {
-            println!("        sp <= {:08x}", val)
+        if self.debug {
+            println!("        x{} <= {:016x}", rnum, val);
         }
+
         match rnum {
             0 => (),
             1..=31 => self.regs[rnum] = val,
@@ -215,7 +235,7 @@ impl ArchState {
                     _ => panic!("Unimplemented")
                 };
 
-                println!("        Load ({:?}) [{:x}] => {}", width, addr, val);
+                // println!("        Load ({:?}) [{:x}] => {}", width, addr, val);
                 self.regw(*rd, val);
 
                 self.pc = rv64alu::add(self.pc, 4);
@@ -226,7 +246,7 @@ impl ArchState {
                 let addr = rv64alu::add(self.regr(*rs1), *imm);
                 let val = self.regr(*rs2);
 
-                println!("        Store ({:?}) [{:x}] <= {}", width, addr, val);
+                // println!("        Store ({:?}) [{:x}] <= {}", width, addr, val);
 
                 match width {
                     LoadStoreWidth::Byte => write8(mem, addr, val.into()),
@@ -272,7 +292,6 @@ impl ArchState {
                     CLoadStoreWidth::Cd => read64(mem, addr)
                 };
 
-                println!("        Load ({:?}) [{:x}] => {}", width, addr, val);
                 self.regw(*rd, val);
 
                 self.pc = rv64alu::add(self.pc, 2);
@@ -288,8 +307,6 @@ impl ArchState {
                     CLoadStoreWidth::Cw => write32(mem, addr, val.into()),
                     CLoadStoreWidth::Cd => write64(mem, addr, val.into())
                 };
-
-                println!("        Store ({:?}) [{:x}] <= {}", width, addr, val);
 
                 self.pc = rv64alu::add(self.pc, 2);
                 Continue
@@ -399,7 +416,6 @@ impl ArchState {
                     CLoadStoreWidth::Cd => read64(mem, addr)
                 };
 
-                println!("        Load ({:?}) [{:x}] => {}", width, addr, val);
                 self.regw(*rd, val);
 
                 self.pc = rv64alu::add(self.pc, 2);
@@ -415,8 +431,6 @@ impl ArchState {
                     CLoadStoreWidth::Cw => write32(mem, addr, val.into()),
                     CLoadStoreWidth::Cd => write64(mem, addr, val.into())
                 };
-
-                println!("        Store ({:?}) [{:x}] <= {}", width, addr, val);
 
                 self.pc = rv64alu::add(self.pc, 2);
                 Continue

@@ -6,8 +6,8 @@ extern crate num_derive;
 #[macro_use]
 extern crate libc;
 
-use std::fs::File;
-use std::io::Read;
+extern crate memmap2;
+
 use std::collections::HashMap;
 
 mod syscalls;
@@ -19,36 +19,15 @@ mod rv64alu;
 mod rv64inst;
 mod rv64emu;
 mod disasm;
+mod progmem;
 
+use libc::ENOTNAM;
 use memif::*;
 use bitops::*;
 use rv64defs::*;
 use rv64inst::*;
 use rv64emu::*;
 
-
-fn read_bin(filename: &String) -> Vec<u8> {
-    let mut f = File::open(&filename).expect("no file found");
-    let metadata = std::fs::metadata(&filename).expect("unable to read metadata");
-    let mut buffer = vec![0; metadata.len() as usize];
-    f.read(&mut buffer).expect("buffer overflow");
-
-    buffer
-}
-
-impl MemIf for Vec<u8> {
-    fn read(&self, addr : u64) -> u8 {
-        self[addr as usize]
-    }
-
-    fn write(&mut self, addr : u64, value : u8) {
-        self[addr as usize] = value;
-    }
-
-    fn mut_ptr(&mut self) -> *mut u8 {
-        self.as_mut_ptr()
-    }
-}
 
 fn main() {
     let filename = std::env::args().nth(1).expect("No filename provided!");
@@ -61,41 +40,55 @@ fn main() {
             HashMap::<u64, String>::new()
         };
 
-    let mut arr : Vec<u8> = read_bin(&filename);
+    let mut mem =
+        progmem::ProgramMemory::new(&filename);
 
-    let mut arch = ArchState {
-        pc: 0,
-        regs: [0; 32]
-    };
+    let mut arch = ArchState::new();
+    arch.set_stack_addr(0x7000_0000_0000);
 
+    let mut debug = false;
 
     loop {
-        let raw_inst = arch.fetch_inst(&mut arr);
-        // println!("{:04x}: {:?}", arch.pc, raw_inst);
+        let raw_inst = arch.fetch_inst(&mut mem);
         let decoded = decode(&raw_inst);
-        // println!("{:?}", arch.regs);
 
-        println!("    {:04x}: ({:08x}) {:?}", arch.pc, raw_inst.raw, decoded);
+        if debug {
+            println!("    {:04x}: ({:08x}) {:?}", arch.pc, raw_inst.raw, decoded);
+        }
 
 
+        let res = arch.exec_inst(&mut mem, &decoded);
 
-        let res = arch.exec_inst(&mut arr, &decoded);
+        if debug {
+            if let DecodedInst::Jalr {rs1 , rd, imm } = decoded {
+                if let Some(sym) = disasm_map.get(&arch.pc) {
+                    println!("Call {}", sym);
+                }
+                else if rs1 == 1 {
+                    println!("Return");
+                }
+            }
 
-        if let DecodedInst::Jalr {rs1 , rd, imm } = decoded {
-            if let Some(sym) = disasm_map.get(&arch.pc) {
-                println!("Call {}", sym);
+            if let DecodedInst::CJalr {rs1} = decoded {
+                if let Some(sym) = disasm_map.get(&arch.pc) {
+                    println!("Call {}", sym);
+                }
+            }
+
+            if let DecodedInst::CJr {rs1} = decoded {
+                if rs1 == 1 {
+                    println!("Return");
+                }
             }
         }
 
-        if let DecodedInst::CJalr {rs1} = decoded {
-            if let Some(sym) = disasm_map.get(&arch.pc) {
-                println!("Call {}", sym);
-            }
-        }
 
-        if let DecodedInst::CJr {rs1} = decoded {
-            if rs1 == 1 {
-                println!("Return");
+        if let DecodedInst::Addi {rs1, rd, imm} = decoded {
+            if rd == 0 && imm == 1 {
+                debug = true;
+            }
+            else if rd == 0 && imm == 2 {
+                debug = false;
             }
         }
 
@@ -106,10 +99,10 @@ fn main() {
         // }
 
         if res == ExecResult::Trap {
-            println!("{:?}", arch.regs);
+            // println!("{:?}", arch.regs);
             let syscall = arch.rv64_parse_syscall();
-            let res = syscalls::exec_syscall(&syscall, &mut arr);
-            println!("Syscall result = {}", res);
+            let res = syscalls::exec_syscall(&syscall, &mut mem, debug);
+            // println!("Syscall result = {}", res);
             arch.regs[10] = res as u64;
         }
         else if res == ExecResult::Halt {
