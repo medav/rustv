@@ -25,7 +25,7 @@ fn test_sub() {
 
 #[inline(always)]
 pub fn addw(op1 : u64, op2 : u64) -> u64 {
-    ((op1 as u32).overflowing_add(op2 as u32).0 & 0xFFFFFFFF) as u64
+    sign_ext64!(32, ((op1 as u32).overflowing_add(op2 as u32).0 & 0xFFFFFFFF) as u64)
 }
 
 #[test]
@@ -36,7 +36,7 @@ fn test_addw() {
 
 #[inline(always)]
 pub fn subw(op1 : u64, op2 : u64) -> u64 {
-    ((op1 as u32).overflowing_sub(op2 as u32).0 & 0xFFFFFFFF) as u64
+    sign_ext64!(32, ((op1 as u32).overflowing_sub(op2 as u32).0 & 0xFFFFFFFF) as u64)
 }
 
 #[test]
