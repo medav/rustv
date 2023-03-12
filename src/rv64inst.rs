@@ -293,18 +293,45 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
                     rs2 : rs2(rinst),
                     rd : rd(rinst)
                 },
+                0b0000001 => DecodedInst::Divu {
+                    rs1 : rs1(rinst),
+                    rs2 : rs2(rinst),
+                    rd : rd(rinst)
+                },
                 _ => panic!("Invalid funct7!")
             }
         },
-        InstSpec(InstOpcode::OP, 6) => DecodedInst::Or {
-            rs1 : rs1(rinst),
-            rs2 : rs2(rinst),
-            rd : rd(rinst)
+        InstSpec(InstOpcode::OP, 6) => {
+            let funct7 = bit_range_get!(rinst.raw, (25, 31));
+            match funct7 {
+                0b0000000 => DecodedInst::Or {
+                    rs1 : rs1(rinst),
+                    rs2 : rs2(rinst),
+                    rd : rd(rinst)
+                },
+                0b0000001 => DecodedInst::Rem {
+                    rs1 : rs1(rinst),
+                    rs2 : rs2(rinst),
+                    rd : rd(rinst)
+                },
+                _ => panic!("Invalid funct7!")
+            }
         },
-        InstSpec(InstOpcode::OP, 7) => DecodedInst::And {
-            rs1 : rs1(rinst),
-            rs2 : rs2(rinst),
-            rd : rd(rinst)
+        InstSpec(InstOpcode::OP, 7) => {
+            let funct7 = bit_range_get!(rinst.raw, (25, 31));
+            match funct7 {
+                0b0000000 => DecodedInst::And {
+                    rs1 : rs1(rinst),
+                    rs2 : rs2(rinst),
+                    rd : rd(rinst)
+                },
+                0b0000001 => DecodedInst::Remu {
+                    rs1 : rs1(rinst),
+                    rs2 : rs2(rinst),
+                    rd : rd(rinst)
+                },
+                _ => panic!("Invalid funct7!")
+            }
         },
 
         //
@@ -349,6 +376,17 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
                 _ => panic!("Invalid funct7: {}", funct7)
             }
         },
+        InstSpec(InstOpcode::OP32, 6) => DecodedInst::Remw {
+            rs1 : rs1(rinst),
+            rs2 : rs2(rinst),
+            rd : rd(rinst)
+        },
+        InstSpec(InstOpcode::OP32, 7) => DecodedInst::Remuw {
+            rs1 : rs1(rinst),
+            rs2 : rs2(rinst),
+            rd : rd(rinst)
+        },
+
 
         //
         // InstOpcode::OpImm

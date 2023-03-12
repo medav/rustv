@@ -109,4 +109,7 @@ fn main() {
             break;
         }
     }
+
+    println!("# executed inst: {}", arch.num_inst);
+
 }

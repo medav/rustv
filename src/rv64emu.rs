@@ -11,6 +11,7 @@ use crate::rv64alu;
 #[derive(Debug)]
 pub struct ArchState {
     pub debug : bool,
+    pub num_inst : u64,
     pub pc : u64,
     pub regs : [u64; 32]
 }
@@ -26,6 +27,7 @@ impl ArchState {
     pub fn new() -> Self {
         ArchState {
             debug: false,
+            num_inst: 0,
             pc: 0,
             regs: [0; 32]
         }
@@ -77,6 +79,8 @@ impl ArchState {
 
     pub fn exec_inst(
         &mut self, mem : &mut dyn MemIf, inst : &DecodedInst) -> ExecResult {
+
+        self.num_inst += 1;
 
         use DecodedInst::*;
         use ExecResult::*;
@@ -137,6 +141,10 @@ impl ArchState {
             Sra {rs1, rs2, rd} =>  op_inst!(*rs1, *rs2, *rd, sra),
             Or {rs1, rs2, rd} =>   op_inst!(*rs1, *rs2, *rd, or),
             And {rs1, rs2, rd} =>  op_inst!(*rs1, *rs2, *rd, and),
+            Div {rs1, rs2, rd} =>  op_inst!(*rs1, *rs2, *rd, div),
+            Divu {rs1, rs2, rd} =>  op_inst!(*rs1, *rs2, *rd, divu),
+            Rem {rs1, rs2, rd} =>  op_inst!(*rs1, *rs2, *rd, rem),
+            Remu {rs1, rs2, rd} =>  op_inst!(*rs1, *rs2, *rd, remu),
 
             //
             // OpImm
@@ -162,6 +170,8 @@ impl ArchState {
             Sllw {rs1, rs2, rd} => op_inst!(*rs1, *rs2, *rd, sllw),
             Srlw {rs1, rs2, rd} => op_inst!(*rs1, *rs2, *rd, srlw),
             Sraw {rs1, rs2, rd} => op_inst!(*rs1, *rs2, *rd, sraw),
+            Remw {rs1, rs2, rd} => op_inst!(*rs1, *rs2, *rd, remw),
+            Remuw {rs1, rs2, rd} => op_inst!(*rs1, *rs2, *rd, remuw),
 
             //
             // OpImm32

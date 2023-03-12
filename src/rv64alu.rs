@@ -1,4 +1,5 @@
 
+use std::mem;
 use crate::bitops::*;
 
 #[inline(always)]
@@ -133,4 +134,65 @@ pub fn srlw(v : u64, shamt : u64) -> u64 {
 #[inline(always)]
 pub fn sraw(v : u64, shamt : u64) -> u64 {
     sign_ext64!(32, sra(v, shamt) & 0xFFFFFFFF)
+}
+
+#[inline(always)]
+pub fn div(n : u64, d : u64) -> u64 {
+    unsafe {
+        let sn : i64 = mem::transmute(n);
+        let sd : i64 = mem::transmute(d);
+        let res : i64 = sn / sd;
+        mem::transmute(res)
+    }
+}
+
+#[inline(always)]
+pub fn divu(n : u64, d : u64) -> u64 {
+    n / d
+}
+
+#[inline(always)]
+pub fn rem(n : u64, d : u64) -> u64 {
+    unsafe {
+        let sn : i64 = mem::transmute(n);
+        let sd : i64 = mem::transmute(d);
+        let res : i64 = sn % sd;
+        mem::transmute(res)
+    }
+}
+
+#[inline(always)]
+pub fn remu(n : u64, d : u64) -> u64 {
+    n % d
+}
+
+#[inline(always)]
+pub fn remw(n : u64, d : u64) -> u64 {
+    unsafe {
+        let sn : i32 = mem::transmute((n & 0xFFFFFFFF) as u32);
+        let sd : i32 = mem::transmute((d & 0xFFFFFFFF) as u32);
+        let res_i32 : i32 = sn % sd;
+        let res_u32 : u32 = mem::transmute(res_i32);
+        res_u32 as u64
+    }
+}
+
+#[inline(always)]
+pub fn remuw(n : u64, d : u64) -> u64 {
+    (n & 0xFFFFFFFF) % (d & 0xFFFFFFFF)
+}
+
+#[test]
+fn test_rem() {
+    let x1 = (1 as u64) % (3 as u64);
+    let x2 = (3 as u64) % (3 as u64);
+    let x3 = (4 as u64) % (3 as u64);
+    let x4 = rem(u64::MAX, 3 as u64);
+
+
+    println!("{}", x1);
+    println!("{}", x2);
+    println!("{}", x3);
+    println!("{:016x}", x4);
+
 }

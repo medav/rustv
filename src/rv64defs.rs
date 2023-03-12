@@ -110,6 +110,10 @@ pub enum DecodedInst {
     Sra   { rs1 : usize, rs2 : usize, rd : usize },
     Or    { rs1 : usize, rs2 : usize, rd : usize },
     And   { rs1 : usize, rs2 : usize, rd : usize },
+    Div   { rs1 : usize, rs2 : usize, rd : usize },
+    Divu  { rs1 : usize, rs2 : usize, rd : usize },
+    Rem   { rs1 : usize, rs2 : usize, rd : usize },
+    Remu  { rs1 : usize, rs2 : usize, rd : usize },
 
     // OpImm
     Addi  { rs1 : usize, rd : usize, imm : u64 },
@@ -129,6 +133,8 @@ pub enum DecodedInst {
     Sllw  { rs1 : usize, rs2 : usize, rd : usize },
     Srlw  { rs1 : usize, rs2 : usize, rd : usize },
     Sraw  { rs1 : usize, rs2 : usize, rd : usize },
+    Remw  { rs1 : usize, rs2 : usize, rd : usize },
+    Remuw { rs1 : usize, rs2 : usize, rd : usize },
 
     // OpImm32
     Addiw { rs1 : usize, rd : usize, imm : u64 },
