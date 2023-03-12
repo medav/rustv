@@ -386,6 +386,9 @@ impl ArchState {
             CSlli {rsrd, shamt} =>
                 c_opimm_inst!(*rsrd, *shamt, *rsrd, sll),
 
+            CSrli {rsrd, shamt} =>
+                c_opimm_inst!(*rsrd, *shamt, *rsrd, srl),
+
 
             CLoadStack {width, rd, imm} => {
                 let addr = self.regr(2) + *imm;
