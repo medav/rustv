@@ -24,7 +24,7 @@ pub fn parse_disasm(filename : &String) -> HashMap<u64, String> {
                         .strip_prefix("<");
 
                     if let Some(name) = maybe_name {
-                        println!("0x{:08x}: {}", addr, name);
+                        // println!("0x{:08x}: {}", addr, name);
                         map.insert(addr, name.to_string());
                     }
                 }
