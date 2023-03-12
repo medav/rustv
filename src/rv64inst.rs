@@ -584,11 +584,11 @@ pub fn decode(rinst : &RawInst) -> DecodedInst {
             match (bit12, bit10_11, bit5_6) {
                 (_, 0, _) => DecodedInst::CSrli {
                     rsrd : rsrd,
-                    imm : immgen!(C1_OPIMM, rinst.raw)
+                    shamt : immgen!(C1_OPIMM, rinst.raw)
                 },
                 (_, 1, _) => DecodedInst::CSrai {
                     rsrd : rsrd,
-                    imm : immgen!(C1_OPIMM, rinst.raw)
+                    shamt : immgen!(C1_OPIMM, rinst.raw)
                 },
                 (_, 2, _) => DecodedInst::CAndi {
                     rsrd : rsrd,

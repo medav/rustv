@@ -175,8 +175,8 @@ pub enum DecodedInst {
     CAddi16sp { imm : u64 },
     CLui      { rd : usize, imm : u64 },
 
-    CSrli     { rsrd : usize, imm : u64 },
-    CSrai     { rsrd : usize, imm : u64 },
+    CSrli     { rsrd : usize, shamt : u64 },
+    CSrai     { rsrd : usize, shamt : u64 },
     CAndi     { rsrd : usize, imm : u64 },
 
     CSub      { rsrd : usize, rs2 : usize },
